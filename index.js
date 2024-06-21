@@ -1,49 +1,89 @@
-const jsdom = require("jsdom");
+import jsdom from "jsdom";
+import fs from "node:fs";
+
 const { JSDOM } = jsdom;
 
-const hrefList = [];
+const mapModel = {
+    racket: "vot-cau-long",
+    cloth: "",
+    shoe: "",
+};
 
 const main = async () => {
-    await JSDOM.fromURL(`${process.env.URL}vot-cau-long.html?page=10`, {}).then(
-        (dom) => {
-            //   dom = dom.serialize();
-            const category =
-                dom.window.document.getElementsByClassName("item_product_main");
-            const length = category.length;
-            for (let i = 0; i < length; i++) {
-                // console.log(
-                //     category[i].children[1].children[0].children[0].href
-                // );
-                hrefList.push(
-                    category[i].children[1].children[0].children[0].href
-                );
-            }
-        }
+    fs.writeFileSync(
+        "test.cvs",
+        "product_type, name, description, price, pricesale, status, quantity, quantity_sold, created_at, last_updated\n"
     );
 
-    const temp = hrefList.map(async (item) => {
-        return JSDOM.fromURL(
-            "https://shopvnb.com/vot-cau-long-pro-kennex-power-pro-705-trang-xanh-chinh-hang.html"
-        )
-            .then((dom) => {
-                const productName =
-                    dom.window.document.getElementsByClassName(
-                        "title-product"
-                    )[0].innerHTML;
-                // console.log(productName);
-                return productName;
-            })
-            .catch((error) => {
-                console.log("Error ===========> ", error.message);
-                return item;
-            });
-    });
+    const temp1 = [];
+    for (let i = 1; i <= 10; i++) {
+        temp1.push(getLinkProductPerPage(i));
+    }
+    const temp2 = await Promise.allSettled(temp1);
+    const temp3 = temp2.map(({ value }) => value);
 
-    try {
-        console.log(await Promise.allSettled(temp));
-    } catch (error) {
-        console.error(error);
+    const hrefList = temp3.flat();
+    console.log({ hrefList });
+
+    for (let i = 0; i < hrefList.length; i++) {
+        const item = await getDataProductByLink(hrefList[i]);
     }
 };
 
 main();
+
+async function getLinkProductPerPage(page = 1) {
+    const hrefList = [];
+    await JSDOM.fromURL(
+        `${process.env.URL}${mapModel[process.argv[2]]}.html?page=${page}`,
+        {}
+    )
+        .then((dom) => {
+            const category =
+                dom.window.document.getElementsByClassName("item_product_main");
+            const length = category.length;
+            for (let i = 0; i < length; i++) {
+                hrefList.push(
+                    category[i].children[1].children[0].children[0].href
+                );
+            }
+        })
+        .catch((e) => {
+            return page;
+        });
+    return hrefList;
+}
+
+async function getDataProductByLink(item) {
+    return JSDOM.fromURL(item)
+        .then((dom) => {
+            const productName =
+                dom.window.document.getElementsByClassName("title-product")[0]
+                    .innerHTML;
+            const pricesale = dom.window.document.getElementsByClassName(
+                "price product-price"
+            )[0].innerHTML;
+            const price = dom.window.document.getElementsByClassName(
+                "price product-price-old"
+            )[0].innerHTML;
+            const status =
+                dom.window.document.getElementsByClassName("a-stock")[0]
+                    .innerHTML;
+
+            fs.appendFileSync(
+                "test.cvs",
+                `${
+                    process.argv[2]
+                }, ${productName}, ${price}, ${pricesale}, ${status}, ${Math.round(
+                    Math.random() * 1000
+                )}, ${Math.round(
+                    Math.random() * 100
+                )}, ${Date.now()}, ${Date.now()}\n`
+            );
+            return { productName, pricesale };
+        })
+        .catch((error) => {
+            console.log("Error ===========> ", error.message);
+            return item;
+        });
+}

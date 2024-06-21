@@ -2,14 +2,17 @@
   "name": "vnb-crawler",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "dev-racket": "node --env-file=.env --watch index.js racket",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "csv": "^6.3.9",
-    "jsdom": "^24.1.0"
+    "fs": "^0.0.1-security",
+    "jsdom": "^24.1.0",
+    "pg": "^8.12.0"
   }
 }
