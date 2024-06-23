@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev-racket": "node --env-file=.env --watch index.js racket",
+    "dev-shoes": "node --env-file=.env --watch index.js shoes",
+    "dev-bag": "node --env-file=.env --watch index.js bag",
+    "dev-shirt": "node --env-file=.env --watch index.js shirt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
